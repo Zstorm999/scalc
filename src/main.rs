@@ -1,22 +1,26 @@
 use iced::{
-    button, text_input, Button, Column, Element, Length, Padding, Row, Sandbox, Settings, Text,
-    TextInput,
+    alignment, button, window, Button, Color, Column, Element, Length, Row, Rule, Sandbox,
+    Settings, Text,
 };
+
 #[derive(Default)]
 struct Calculator {
     content: String,
-    input: text_input::State,
     buttons: ButtonsGrid,
 }
 
 #[derive(Debug, Clone)]
 enum Message {
-    InputChanged(String),
     NumericButton(usize),
-    AddButton,
-    SubButton,
-    MulButton,
-    DivButton,
+    Operation(Operation),
+}
+
+#[derive(Debug, Clone)]
+enum Operation {
+    Add,
+    Sub,
+    Mul,
+    Div,
 }
 
 impl Sandbox for Calculator {
@@ -31,22 +35,53 @@ impl Sandbox for Calculator {
     }
 
     fn view(&mut self) -> Element<Message> {
-        Column::new()
-            .push(TextInput::new(
-                &mut self.input,
-                "Type something",
-                "",
-                Message::InputChanged,
-            ))
-            .push(Text::new(&self.content))
+        let mut too_long = " ";
+
+        let display_text = if self.content.is_empty() {
+            " "
+        } else {
+            if self.content.len() <= 19 {
+                &self.content
+            } else {
+                too_long = "«";
+                &self.content[(self.content.len() - 19)..]
+            }
+        };
+
+        let content: Element<_> = Column::new()
+            .width(Length::Shrink)
+            .height(Length::Shrink)
+            .align_items(alignment::Alignment::End)
+            .push(
+                Row::new()
+                    .push(
+                        Text::new(too_long)
+                            .width(Length::FillPortion(6))
+                            .horizontal_alignment(alignment::Horizontal::Center),
+                    )
+                    .push(
+                        Text::new(display_text)
+                            .width(Length::FillPortion(94))
+                            .horizontal_alignment(alignment::Horizontal::Right),
+                    ),
+            )
+            .push(Rule::horizontal(1))
             .push(self.buttons.view())
-            .into()
+            .into();
+
+        //content
+        content.explain(Color::BLACK)
     }
 
     fn update(&mut self, message: Self::Message) {
         match message {
-            Message::InputChanged(s) => self.content += &s,
-            _ => (),
+            Message::NumericButton(v) => self.content += &v.to_string(),
+            Message::Operation(o) => match o {
+                Operation::Add => self.content += "+",
+                Operation::Sub => self.content += "-",
+                Operation::Mul => self.content += "*",
+                Operation::Div => self.content += "/",
+            },
         }
     }
 }
@@ -94,7 +129,7 @@ impl ButtonsGrid {
                     )
                     .push(
                         Button::new(&mut self.button_div, Text::new("/"))
-                            .on_press(Message::DivButton),
+                            .on_press(Message::Operation(Operation::Div)),
                     ),
             )
             .push(
@@ -114,7 +149,7 @@ impl ButtonsGrid {
                     )
                     .push(
                         Button::new(&mut self.button_mul, Text::new("*"))
-                            .on_press(Message::MulButton),
+                            .on_press(Message::Operation(Operation::Mul)),
                     ),
             )
             .push(
@@ -134,7 +169,7 @@ impl ButtonsGrid {
                     )
                     .push(
                         Button::new(&mut self.button_sub, Text::new("-"))
-                            .on_press(Message::SubButton),
+                            .on_press(Message::Operation(Operation::Sub)),
                     ),
             )
             .push(
@@ -146,7 +181,7 @@ impl ButtonsGrid {
                     )
                     .push(
                         Button::new(&mut self.button_add, Text::new("+"))
-                            .on_press(Message::AddButton),
+                            .on_press(Message::Operation(Operation::Add)),
                     ),
             )
             .into()
@@ -154,5 +189,12 @@ impl ButtonsGrid {
 }
 
 fn main() -> iced::Result {
-    Calculator::run(Settings::default())
+    Calculator::run(Settings {
+        window: window::Settings {
+            size: (200, 300),
+            resizable: false,
+            ..window::Settings::default()
+        },
+        ..Settings::default()
+    })
 }
