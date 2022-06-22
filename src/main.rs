@@ -6,6 +6,7 @@ use iced::{
     alignment, button, window, Button, Color, Column, Element, Length, Row, Rule, Sandbox,
     Settings, Text,
 };
+use std::str::FromStr;
 
 mod parser;
 
@@ -194,11 +195,39 @@ impl ButtonsGrid {
     }
 }
 
+#[derive(Debug)]
+enum CalcVal {
+    Number(isize),
+    Operator(char),
+    Error(String),
+}
+
 fn parse_expression(s: &str) {
-    let p: Parser<isize> = Parser::new();
+    let parser = Parser::new()
+        .push("[0-9]+", |s| {
+            if let Ok(v) = s.parse::<isize>() {
+                return CalcVal::Number(v);
+            }
+            CalcVal::Error(String::from("Unable to parse integer: ") + s)
+        })
+        .push("[+\\-\\*/]", |s| {
+            CalcVal::Operator(s.chars().next().unwrap())
+        });
+
+    for value in parser.parse(s) {
+        match value {
+            Ok(v) => println!("{:?}", v),
+            Err(_) => {
+                println!("An error happened !");
+                break;
+            }
+        }
+    }
 }
 
 fn main() -> iced::Result {
+    parse_expression("125+14");
+
     Calculator::run(Settings {
         window: window::Settings {
             size: (200, 300),
