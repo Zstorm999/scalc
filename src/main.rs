@@ -1,7 +1,13 @@
+#[macro_use]
+extern crate lazy_static;
+
+use crate::parser::Parser;
 use iced::{
     alignment, button, window, Button, Color, Column, Element, Length, Row, Rule, Sandbox,
     Settings, Text,
 };
+
+mod parser;
 
 #[derive(Default)]
 struct Calculator {
@@ -186,6 +192,10 @@ impl ButtonsGrid {
             )
             .into()
     }
+}
+
+fn parse_expression(s: &str) {
+    let p: Parser<isize> = Parser::new();
 }
 
 fn main() -> iced::Result {
